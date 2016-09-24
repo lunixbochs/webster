@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Webster</title>
+  <link rel="stylesheet" href="static/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.5, maximum-scale=0.5, user-scalable=no" />
+  <style type="text/css">
+    body {
+      margin-top: 40px;
+      margin-bottom: 20px;
+      font-size: 120%;
+    }
+    .container {
+      display: block;
+      max-width: 1200px;
+      margin: auto;
+      overflow-y: hidden;
+    }
+    input {
+      margin: auto;
+      display: block;
+      min-width: 95%;
+      font-size: 24px;
+      text-align: center;
+    }
+    .result {
+      display: block;
+      margin: 40px;
+    }
+    .hw {
+      color: #2970a0;
+      font-weight: bold;
+    }
+    .pr {
+      font-style: italic;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+      var latest = new Date();
+      var input = $('input');
+      var resultDiv = $('.results');
+      input.val(input.val());
+
+      function addResult(result) {
+        var div = $('<div>', {'class': 'result'});
+        div.html(result[1]);
+        resultDiv.append(div);
+      }
+      function fillResults(results) {
+        resultDiv.html('');
+        for (var i = 0; i < results.data.length; i++) {
+          addResult(results.data[i]);
+        }
+      }
+
+      var last = '';
+      function search(val, when) {
+        if (val == last) return;
+        last = val;
+        if (!val) {
+          resultDiv.html('');
+          return;
+        }
+
+        $.ajax({
+          type: "POST",
+          url: "search",
+          data: JSON.stringify({query: val}),
+          contentType: "application/json; charset=UTF-8",
+          success: function(results) {
+	    if (when < latest) return;
+	    latest = when;
+            fillResults(results);
+          }
+        });
+      }
+
+      function isearch() {
+	var now = new Date();
+        setTimeout(function() {search(input.val(), now)}, 250);
+      }
+      $(window).keydown(function() {
+        input.focus();
+      });
+      input.keydown(isearch),
+      input.keyup(isearch);
+      input.on('paste', isearch);
+      $('form').on('submit', function(e) {
+          e.preventDefault();
+      });
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <form method="POST">
+      <input name="query" type="text" value="{{ query }}" autofocus/>
+    </form>
+    <div class="results">
+      {% if words %}
+      {% for word, html in words.data %}
+      <div class="result">
+      {{ html|safe }}
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
